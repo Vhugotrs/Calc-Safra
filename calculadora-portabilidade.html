@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Portabilidade — Safra</title>
+<style>
+  :root { --safra:#0a2d5e; --ok:#137333; --bad:#c5221f; --bg:#f4f6fa; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:var(--bg); color:#1a1a1a; }
+  .wrap { max-width:520px; margin:0 auto; padding:18px 16px 40px; }
+  h1 { font-size:20px; color:var(--safra); margin:8px 0 2px; }
+  .sub { font-size:13px; color:#666; margin:0 0 18px; }
+  label { display:block; font-size:13px; font-weight:600; margin:14px 0 5px; }
+  input, select { width:100%; padding:13px; font-size:17px; border:1.5px solid #ccd2db; border-radius:10px; background:#fff; }
+  input:focus, select:focus { outline:none; border-color:var(--safra); }
+  button { width:100%; margin-top:20px; padding:15px; font-size:17px; font-weight:700; color:#fff; background:var(--safra); border:none; border-radius:10px; cursor:pointer; }
+  button:active { opacity:.85; }
+  .res { margin-top:22px; }
+  .saldo { background:#fff; border:1px solid #e0e4ea; border-radius:10px; padding:14px; font-size:14px; color:#444; }
+  .saldo b { color:#000; font-size:16px; }
+  .card { background:#fff; border:1px solid #e0e4ea; border-left:5px solid var(--safra); border-radius:10px; padding:14px 16px; margin-top:10px; display:flex; justify-content:space-between; align-items:center; }
+  .card.best { border-left-color:var(--ok); background:#f1faf2; }
+  .card .taxa { font-weight:700; font-size:15px; }
+  .card .taxa small { display:block; font-weight:500; color:#777; font-size:11px; }
+  .card .troco { font-size:21px; font-weight:800; color:var(--ok); }
+  .card .troco.neg { color:var(--bad); }
+  .card .troco small { display:block; font-weight:500; color:#888; font-size:11px; text-align:right; }
+  .aviso { font-size:12px; color:#8a6d00; background:#fff8e1; border:1px solid #ffe69c; border-radius:8px; padding:10px 12px; margin-top:14px; }
+  .rodape { font-size:11px; color:#999; text-align:center; margin-top:24px; line-height:1.5; }
+  .erro { color:var(--bad); font-size:13px; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calculadora de Portabilidade</h1>
+  <p class="sub">Digimais → Banco Safra · estimativa de quanto libera (troco), mantendo a mesma parcela.</p>
+
+  <label for="conv">Convênio</label>
+  <select id="conv">
+    <option value="pref">Prefeitura de São Paulo (1,69%)</option>
+    <option value="iprem">IPREM (1,75%)</option>
+  </select>
+
+  <label for="parcela">Valor da parcela atual (R$)</label>
+  <input id="parcela" type="text" inputmode="decimal" placeholder="ex.: 473,45">
+
+  <label for="taxa">Taxa de juros do contrato atual (% ao mês)</label>
+  <input id="taxa" type="text" inputmode="decimal" placeholder="ex.: 2,49">
+
+  <label for="prazo">Prazo em aberto (parcelas restantes)</label>
+  <input id="prazo" type="text" inputmode="numeric" placeholder="ex.: 113">
+
+  <button onclick="calcular()">Calcular quanto libera</button>
+  <div id="erro" class="erro"></div>
+
+  <div id="res" class="res" style="display:none">
+    <div class="saldo">Saldo devedor estimado a quitar: <b id="saldo"></b><br><span style="font-size:12px;color:#888">(valor presente das <span id="np"></span> parcelas restantes na taxa atual)</span></div>
+    <div id="cards"></div>
+    <div class="aviso">⚠️ <b>Valor aproximado.</b> O saldo exato de quitação é informado pelo banco atual na hora da portabilidade. Pode haver variação. O Safra tem piso: operações com principal abaixo de ~R$ 2.000 ou troco muito baixo não passam.</div>
+  </div>
+
+  <p class="rodape">Estimativa baseada em simulações reais do Safra (Port+Refin, 120 parcelas, 1º vcto ~2 meses).<br>Uso interno — Victor Hugo · Crédito Consignado.</p>
+</div>
+
+<script>
+// ── Motor (espelho do calc.js) ──────────────────────────────────────────────
+// Saldo devedor = valor presente das parcelas restantes na taxa de origem.
+function saldoPV(parcela, rest, taxaPct) {
+  const j = taxaPct / 100;
+  if (!parcela || !rest || !j || j <= 0 || rest <= 0) return null;
+  return parcela * (1 - Math.pow(1 + j, -rest)) / j;
+}
+// Modelo calibrado de portabilidade (Port+Refin × 120). troco = (parcela·F − dívida − iofCompl)/(1+iofTroco)
+const CALIB = {
+  '1.69': { F:50.0211,  iofTroco:0.0319011, complA:25.45, complB:0.00026933 },
+  '1.65': { F:51.0578,  iofTroco:0.0317359, complA:0,     complB:0 },
+  '1.59': { F:52.0787,  iofTroco:0.0319011, complA:25.45, complB:0.00026933 },
+  '1.75': { F:48.75281, iofTroco:0.0319011, complA:25.45, complB:0.00026933 }, // IPREM
+};
+function trocoPort(parcela, saldo, taxa) {
+  const c = CALIB[taxa]; if (!c || saldo == null) return null;
+  return (parcela * c.F - saldo - (c.complA + c.complB * saldo)) / (1 + c.iofTroco);
+}
+const RATES = { pref: ['1.69'], iprem: ['1.75'] };
+
+function brToNum(s){ return parseFloat(String(s||'').replace(/\s|R\$/g,'').replace(/\./g,'').replace(',','.')); }
+function fmt(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function calcular(){
+  const erro = document.getElementById('erro'); erro.textContent='';
+  document.getElementById('res').style.display='none';
+  const parcela = brToNum(document.getElementById('parcela').value);
+  const taxa = brToNum(document.getElementById('taxa').value);
+  const prazo = parseInt(String(document.getElementById('prazo').value).replace(/\D/g,''),10);
+  const conv = document.getElementById('conv').value;
+  if (!parcela || parcela<=0) return erro.textContent='Informe o valor da parcela.';
+  if (!taxa || taxa<=0) return erro.textContent='Informe a taxa de juros (% ao mês).';
+  if (!prazo || prazo<=0) return erro.textContent='Informe o prazo em aberto (parcelas restantes).';
+
+  const saldo = saldoPV(parcela, prazo, taxa);
+  if (saldo==null) return erro.textContent='Não consegui calcular o saldo — confira os valores.';
+  document.getElementById('saldo').textContent = 'R$ ' + fmt(saldo);
+  document.getElementById('np').textContent = prazo;
+
+  const cards = document.getElementById('cards'); cards.innerHTML='';
+  RATES[conv].forEach((taxaSafra, i) => {
+    const troco = trocoPort(parcela, saldo, taxaSafra);
+    const principal = troco==null ? null : saldo + troco;
+    const best = (i===0);
+    const neg = troco!=null && troco<0;
+    const piso = principal!=null && principal<2000;
+    cards.innerHTML += `<div class="card ${best?'best':''}">
+      <div class="taxa">${taxaSafra.replace('.',',')}% a.m.<small>Safra · 120 parcelas</small></div>
+      <div class="troco ${neg?'neg':''}">R$ ${troco==null?'—':fmt(troco)}<small>${piso?'⚠ abaixo do piso Safra':'libera na conta'}</small></div>
+    </div>`;
+  });
+  document.getElementById('res').style.display='block';
+}
+</script>
+</body>
+</html>
