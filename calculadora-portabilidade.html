@@ -2,70 +2,188 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a2d5e">
 <title>Calculadora de Portabilidade — Safra</title>
 <style>
-  :root { --safra:#0a2d5e; --ok:#137333; --bad:#c5221f; --bg:#f4f6fa; }
+  :root {
+    --safra:#0a2d5e; --safra-2:#164a91;
+    --bg:#eef1f6; --card:#fff; --linha:#dde2ea;
+    --ink:#12161c; --ink-2:#3d4652; --muted:#5b6675;
+    --ok:#0d6b36; --ok-bg:#eef8f1; --bad:#b3261e;
+    --aviso-bg:#fff8e6; --aviso-bd:#f0dca8; --aviso-ink:#6b5000;
+    --r:12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --safra:#7fb0ef; --safra-2:#9cc4f5;
+      --bg:#0d1117; --card:#161b22; --linha:#2b3340;
+      --ink:#e8ecf1; --ink-2:#c2cad4; --muted:#8b95a3;
+      --ok:#5fd18b; --ok-bg:#12291d; --bad:#ff8f85;
+      --aviso-bg:#2a2312; --aviso-bd:#4d411f; --aviso-ink:#e3ca86;
+    }
+  }
   * { box-sizing:border-box; }
-  body { font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:var(--bg); color:#1a1a1a; }
-  .wrap { max-width:520px; margin:0 auto; padding:18px 16px 40px; }
-  h1 { font-size:20px; color:var(--safra); margin:8px 0 2px; }
-  .sub { font-size:13px; color:#666; margin:0 0 18px; }
-  label { display:block; font-size:13px; font-weight:600; margin:14px 0 5px; }
-  input, select { width:100%; padding:13px; font-size:17px; border:1.5px solid #ccd2db; border-radius:10px; background:#fff; }
-  input:focus, select:focus { outline:none; border-color:var(--safra); }
-  button { width:100%; margin-top:20px; padding:15px; font-size:17px; font-weight:700; color:#fff; background:var(--safra); border:none; border-radius:10px; cursor:pointer; }
-  button:active { opacity:.85; }
-  .res { margin-top:22px; }
-  .saldo { background:#fff; border:1px solid #e0e4ea; border-radius:10px; padding:14px; font-size:14px; color:#444; }
-  .saldo b { color:#000; font-size:16px; }
-  .card { background:#fff; border:1px solid #e0e4ea; border-left:5px solid var(--safra); border-radius:10px; padding:14px 16px; margin-top:10px; display:flex; justify-content:space-between; align-items:center; }
-  .card.best { border-left-color:var(--ok); background:#f1faf2; }
-  .card .taxa { font-weight:700; font-size:15px; }
-  .card .taxa small { display:block; font-weight:500; color:#777; font-size:11px; }
-  .card .troco { font-size:21px; font-weight:800; color:var(--ok); }
-  .card .troco.neg { color:var(--bad); }
-  .card .troco small { display:block; font-weight:500; color:#888; font-size:11px; text-align:right; }
-  .aviso { font-size:12px; color:#8a6d00; background:#fff8e1; border:1px solid #ffe69c; border-radius:8px; padding:10px 12px; margin-top:14px; }
-  .rodape { font-size:11px; color:#999; text-align:center; margin-top:24px; line-height:1.5; }
-  .erro { color:var(--bad); font-size:13px; margin-top:10px; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    font-size:16px; line-height:1.5;
+  }
+  .wrap { max-width:520px; margin:0 auto;
+          padding:calc(24px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom)); }
+
+  header { margin-bottom:20px; }
+  h1 { font-size:1.375rem; line-height:1.25; color:var(--ink); margin:0 0 6px; letter-spacing:-0.01em; }
+  .sub { font-size:0.875rem; color:var(--muted); margin:0; }
+
+  .card { background:var(--card); border:1px solid var(--linha); border-radius:var(--r); padding:18px 16px; }
+
+  label, legend { display:block; font-size:0.8125rem; font-weight:600; color:var(--ink-2); margin:0 0 6px; padding:0; }
+  .campo + .campo { margin-top:16px; }
+  /* os blocos condicionais são irmãos novos: `.campo + .campo` não os alcança */
+  #bloco-saldo, #bloco-estimar { margin-top:16px; }
+  .dica { font-size:0.75rem; font-weight:400; color:var(--muted); margin:5px 0 0; }
+
+  input, select {
+    width:100%; padding:13px 12px; font:inherit; font-size:1.0625rem;
+    color:var(--ink); background:var(--card);
+    border:1.5px solid var(--linha); border-radius:10px; -webkit-appearance:none; appearance:none;
+  }
+  select { background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+           background-position:calc(100% - 19px) 50%,calc(100% - 14px) 50%; background-size:5px 5px,5px 5px;
+           background-repeat:no-repeat; padding-right:38px; }
+  input:focus, select:focus { outline:none; border-color:var(--safra); box-shadow:0 0 0 3px color-mix(in srgb, var(--safra) 22%, transparent); }
+  input[aria-invalid="true"] { border-color:var(--bad); }
+  input::placeholder { color:var(--muted); opacity:1; }
+
+  /* origem do saldo: escolha explícita, não caixinha escondida */
+  fieldset { border:0; margin:16px 0 0; padding:0; }
+  .segm { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--bg);
+          border:1px solid var(--linha); border-radius:10px; padding:4px; }
+  .segm label { margin:0; font-weight:500; font-size:0.875rem; position:relative; }
+  .segm input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .segm span { display:block; text-align:center; padding:9px 6px; border-radius:7px; color:var(--muted); }
+  .segm input:checked + span { background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .segm input:focus-visible + span { outline:2px solid var(--safra); outline-offset:1px; }
+
+  button {
+    width:100%; margin-top:20px; padding:15px; font:inherit; font-size:1.0625rem; font-weight:700;
+    color:#fff; background:var(--safra); border:0; border-radius:10px; cursor:pointer;
+  }
+  @media (prefers-color-scheme: dark) { button { color:#0d1117; } }
+  button:hover { background:var(--safra-2); }
+  button:active { transform:translateY(1px); }
+  button:focus-visible { outline:3px solid var(--safra); outline-offset:2px; }
+
+  .erro { color:var(--bad); font-size:0.8125rem; margin-top:12px; font-weight:500; }
+  .erro:empty { display:none; }
+
+  .res { margin-top:16px; }
+  .saldo { background:var(--card); border:1px solid var(--linha); border-radius:var(--r);
+           padding:14px 16px; font-size:0.875rem; color:var(--ink-2); }
+  .saldo b { display:block; font-size:1.25rem; color:var(--ink); margin-top:2px; letter-spacing:-0.01em; }
+  .saldo .fonte { font-size:0.75rem; color:var(--muted); margin-top:4px; }
+
+  .troco { margin-top:10px; background:var(--ok-bg); border:1px solid var(--ok);
+           border-radius:var(--r); padding:18px 16px; text-align:center; }
+  .troco .rot { font-size:0.8125rem; color:var(--ink-2); font-weight:600; }
+  .troco .val { font-size:2.125rem; font-weight:800; color:var(--ok); letter-spacing:-0.02em; line-height:1.15; margin:4px 0 2px; }
+  .troco .val.neg { color:var(--bad); }
+  .troco .det { font-size:0.8125rem; color:var(--muted); }
+  .troco.piso { background:var(--aviso-bg); border-color:var(--aviso-bd); }
+  .troco.piso .val { color:var(--aviso-ink); }
+
+  .aviso { font-size:0.75rem; color:var(--aviso-ink); background:var(--aviso-bg); border:1px solid var(--aviso-bd);
+           border-radius:10px; padding:11px 13px; margin-top:12px; line-height:1.55; }
+  .rodape { font-size:0.6875rem; color:var(--muted); text-align:center; margin-top:26px; line-height:1.6; }
+  @media (prefers-reduced-motion: reduce) { button:active { transform:none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<header>
   <h1>Calculadora de Portabilidade</h1>
-  <p class="sub">Digimais → Banco Safra · estimativa de quanto libera (troco), mantendo a mesma parcela.</p>
+  <p class="sub">Quanto o Banco Safra libera na conta (troco), mantendo a mesma parcela que já sai na folha.</p>
+</header>
 
-  <label for="conv">Convênio</label>
-  <select id="conv">
-    <option value="pref">Prefeitura de São Paulo (1,69%)</option>
-    <option value="iprem">IPREM (1,75%)</option>
-    <option value="pmesp">PMESP · Polícia Militar (1,75%)</option>
-  </select>
-
-  <label for="parcela">Valor da parcela atual (R$)</label>
-  <input id="parcela" type="text" inputmode="decimal" placeholder="ex.: 473,45">
-
-  <label for="taxa">Taxa de juros do contrato atual (% ao mês)</label>
-  <input id="taxa" type="text" inputmode="decimal" placeholder="ex.: 2,49">
-
-  <label for="prazo">Prazo em aberto (parcelas restantes)</label>
-  <input id="prazo" type="text" inputmode="numeric" placeholder="ex.: 113">
-
-  <button onclick="calcular()">Calcular quanto libera</button>
-  <div id="erro" class="erro"></div>
-
-  <div id="res" class="res" style="display:none">
-    <div class="saldo">Saldo devedor estimado a quitar: <b id="saldo"></b><br><span style="font-size:12px;color:#888">(valor presente das <span id="np"></span> parcelas restantes na taxa atual)</span></div>
-    <div id="cards"></div>
-    <div class="aviso">⚠️ <b>Valor aproximado.</b> O saldo exato de quitação é informado pelo banco atual na hora da portabilidade. Pode haver variação. O Safra tem piso: operações com principal abaixo de ~R$ 2.000 ou troco muito baixo não passam.</div>
+<form class="card" id="form" novalidate>
+  <div class="campo">
+    <label for="conv">Convênio</label>
+    <select id="conv">
+      <option value="pref">Prefeitura de São Paulo</option>
+      <option value="iprem">IPREM</option>
+      <option value="pmesp">PMESP · Polícia Militar</option>
+    </select>
   </div>
 
-  <p class="rodape">Estimativa baseada em simulações reais do Safra (Port+Refin; 120 parcelas — PMESP 96; 1º vcto ~2 meses).<br>Uso interno — Victor Hugo · Crédito Consignado.</p>
+  <div class="campo">
+    <label for="parcela">Valor da parcela atual (R$)</label>
+    <input id="parcela" type="text" inputmode="decimal" autocomplete="off" placeholder="473,45">
+    <p class="dica">A parcela que já é descontada hoje. Ela não muda.</p>
+  </div>
+
+  <fieldset>
+    <legend>Saldo devedor do contrato atual</legend>
+    <div class="segm">
+      <label><input type="radio" name="modo" value="sei" checked><span>Eu sei o saldo</span></label>
+      <label><input type="radio" name="modo" value="estimar"><span>Calcular pra mim</span></label>
+    </div>
+  </fieldset>
+
+  <div id="bloco-saldo">
+    <div class="campo">
+      <label for="saldo">Saldo devedor hoje (R$)</label>
+      <input id="saldo" type="text" inputmode="decimal" autocomplete="off" placeholder="52.310,00">
+      <p class="dica">O valor de quitação, que aparece no app ou no extrato do banco atual.</p>
+    </div>
+  </div>
+
+  <div id="bloco-estimar" hidden>
+    <div class="campo">
+      <label for="taxa">Taxa de juros do contrato atual (% ao mês)</label>
+      <input id="taxa" type="text" inputmode="decimal" autocomplete="off" placeholder="2,49">
+    </div>
+    <div class="campo">
+      <label for="prazo">Prazo em aberto (parcelas restantes)</label>
+      <input id="prazo" type="text" inputmode="numeric" autocomplete="off" placeholder="113">
+      <p class="dica" id="dica-prazo">No máximo 120 parcelas neste convênio.</p>
+    </div>
+  </div>
+
+  <button type="submit">Calcular quanto libera</button>
+  <div class="erro" id="erro" role="alert"></div>
+</form>
+
+<div id="res" class="res" hidden>
+  <div class="saldo">
+    Saldo a quitar no banco atual
+    <b id="out-saldo"></b>
+    <div class="fonte" id="out-fonte"></div>
+  </div>
+
+  <div class="troco" id="box-troco">
+    <div class="rot">Libera na conta</div>
+    <div class="val" id="out-troco"></div>
+    <div class="det" id="out-det"></div>
+  </div>
+
+  <div class="aviso">
+    <b>Valor aproximado.</b> O saldo exato de quitação é informado pelo banco atual na hora da portabilidade e pode variar.
+    O Safra tem piso: operações com principal abaixo de ~R$ 2.000, ou troco muito baixo, não passam.
+  </div>
+</div>
+
+<p class="rodape">
+  Estimativa baseada em simulações reais do Safra (Port + Refin; 120 parcelas — PMESP 96; 1º vencimento em ~2 meses).<br>
+  Uso interno — Victor Hugo · Crédito Consignado.
+</p>
+
 </div>
 
 <script>
-// ── Motor (espelho do calc.js) ──────────────────────────────────────────────
+// ── Motor (espelho do CODIGOS/calc.js) ─────────────────────────────────────
 // Saldo devedor = valor presente das parcelas restantes na taxa de origem.
 function saldoPV(parcela, rest, taxaPct) {
   const j = taxaPct / 100;
@@ -92,40 +210,87 @@ function trocoPort(parcela, saldo, taxa, prazo) {
 }
 // taxa mostrada por convênio (a primária = melhor comissão) + prazo do refin
 const RATES = { pref: [['1.69',120]], iprem: [['1.75',120]], pmesp: [['1.75',96]] };
+// prazo MÁXIMO do contrato de origem, por convênio (Victor 09/07/2026)
+const PRAZO_MAX = { pref:120, iprem:120, pmesp:96 };
+const PRINCIPAL_MIN = 2000;
 
-function brToNum(s){ return parseFloat(String(s||'').replace(/\s|R\$/g,'').replace(/\./g,'').replace(',','.')); }
-function fmt(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// ── UI ─────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const brToNum = s => { const t = String(s||'').replace(/\s|R\$/g,'').replace(/\./g,'').replace(',','.'); const n = parseFloat(t); return isNaN(n) ? null : n; };
+const fmt = n => n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const modo = () => document.querySelector('input[name=modo]:checked').value;
 
-function calcular(){
-  const erro = document.getElementById('erro'); erro.textContent='';
-  document.getElementById('res').style.display='none';
-  const parcela = brToNum(document.getElementById('parcela').value);
-  const taxa = brToNum(document.getElementById('taxa').value);
-  const prazo = parseInt(String(document.getElementById('prazo').value).replace(/\D/g,''),10);
-  const conv = document.getElementById('conv').value;
-  if (!parcela || parcela<=0) return erro.textContent='Informe o valor da parcela.';
-  if (!taxa || taxa<=0) return erro.textContent='Informe a taxa de juros (% ao mês).';
-  if (!prazo || prazo<=0) return erro.textContent='Informe o prazo em aberto (parcelas restantes).';
-
-  const saldo = saldoPV(parcela, prazo, taxa);
-  if (saldo==null) return erro.textContent='Não consegui calcular o saldo — confira os valores.';
-  document.getElementById('saldo').textContent = 'R$ ' + fmt(saldo);
-  document.getElementById('np').textContent = prazo;
-
-  const cards = document.getElementById('cards'); cards.innerHTML='';
-  RATES[conv].forEach(([taxaSafra, prazoSafra], i) => {
-    const troco = trocoPort(parcela, saldo, taxaSafra, prazoSafra);
-    const principal = troco==null ? null : saldo + troco;
-    const best = (i===0);
-    const neg = troco!=null && troco<0;
-    const piso = principal!=null && principal<2000;
-    cards.innerHTML += `<div class="card ${best?'best':''}">
-      <div class="taxa">${taxaSafra.replace('.',',')}% a.m.<small>Safra · ${prazoSafra} parcelas</small></div>
-      <div class="troco ${neg?'neg':''}">R$ ${troco==null?'—':fmt(troco)}<small>${piso?'⚠ abaixo do piso Safra':'libera na conta'}</small></div>
-    </div>`;
-  });
-  document.getElementById('res').style.display='block';
+function sincronizarModo() {
+  const sei = modo() === 'sei';
+  $('bloco-saldo').hidden = !sei;
+  $('bloco-estimar').hidden = sei;
 }
+function sincronizarPrazo() {
+  $('dica-prazo').textContent = `No máximo ${PRAZO_MAX[$('conv').value]} parcelas neste convênio.`;
+}
+document.querySelectorAll('input[name=modo]').forEach(r => r.addEventListener('change', sincronizarModo));
+$('conv').addEventListener('change', sincronizarPrazo);
+
+function falhar(msg, campo) {
+  $('erro').textContent = msg;
+  $('res').hidden = true;
+  if (campo) { campo.setAttribute('aria-invalid','true'); campo.focus(); }
+  return null;
+}
+
+function calcular(e) {
+  if (e) e.preventDefault();
+  $('erro').textContent = '';
+  ['parcela','saldo','taxa','prazo'].forEach(id => $(id).removeAttribute('aria-invalid'));
+
+  const conv = $('conv').value;
+  const [taxaSafra, prazoRefin] = RATES[conv][0];
+  const parcela = brToNum($('parcela').value);
+  if (!parcela || parcela <= 0) return falhar('Informe o valor da parcela atual.', $('parcela'));
+
+  let saldo, fonte;
+  if (modo() === 'sei') {
+    saldo = brToNum($('saldo').value);
+    if (!saldo || saldo <= 0) return falhar('Informe o saldo devedor, ou escolha "Calcular pra mim".', $('saldo'));
+    fonte = 'valor informado por você';
+  } else {
+    const taxa = brToNum($('taxa').value);
+    const prazo = parseInt(String($('prazo').value).replace(/\D/g,''), 10);
+    const max = PRAZO_MAX[conv];
+    if (!taxa || taxa <= 0) return falhar('Informe a taxa de juros do contrato atual (% ao mês).', $('taxa'));
+    if (taxa > 10) return falhar('Essa taxa parece ser a ANUAL. Informe a taxa ao MÊS (ex.: 2,49).', $('taxa'));
+    if (!prazo || prazo <= 0) return falhar('Informe o prazo em aberto (parcelas restantes).', $('prazo'));
+    if (prazo > max) return falhar(`Neste convênio o prazo vai até ${max} parcelas. Confira o valor.`, $('prazo'));
+    saldo = saldoPV(parcela, prazo, taxa);
+    if (saldo == null) return falhar('Não consegui calcular o saldo — confira os valores.', $('taxa'));
+    fonte = `estimado por ${prazo} parcelas de R$ ${fmt(parcela)} a ${fmt(taxa)}% ao mês`;
+  }
+
+  const troco = trocoPort(parcela, saldo, taxaSafra, prazoRefin);
+  if (troco == null) return falhar('Não consegui calcular. Confira os valores.');
+  const principal = saldo + troco;
+
+  $('out-saldo').textContent = 'R$ ' + fmt(saldo);
+  $('out-fonte').textContent = fonte;
+  $('out-troco').textContent = 'R$ ' + fmt(troco);
+  $('out-troco').className = 'val' + (troco < 0 ? ' neg' : '');
+  $('out-det').textContent = `${taxaSafra.replace('.',',')}% ao mês · ${prazoRefin} parcelas de R$ ${fmt(parcela)}`;
+
+  const box = $('box-troco');
+  box.className = 'troco';
+  if (troco < 0) {
+    box.classList.add('piso');
+    $('out-det').textContent = 'A parcela não cobre esse saldo neste prazo. Não dá para portar assim.';
+  } else if (principal < PRINCIPAL_MIN) {
+    box.classList.add('piso');
+    $('out-det').textContent = `Operação de R$ ${fmt(principal)} — abaixo do piso do Safra (~R$ ${fmt(PRINCIPAL_MIN)}).`;
+  }
+  $('res').hidden = false;
+}
+
+$('form').addEventListener('submit', calcular);
+sincronizarModo();
+sincronizarPrazo();
 </script>
 </body>
 </html>
