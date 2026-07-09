@@ -40,6 +40,7 @@
   <select id="conv">
     <option value="pref">Prefeitura de São Paulo (1,69%)</option>
     <option value="iprem">IPREM (1,75%)</option>
+    <option value="pmesp">PMESP · Polícia Militar (1,75%)</option>
   </select>
 
   <label for="parcela">Valor da parcela atual (R$)</label>
@@ -60,7 +61,7 @@
     <div class="aviso">⚠️ <b>Valor aproximado.</b> O saldo exato de quitação é informado pelo banco atual na hora da portabilidade. Pode haver variação. O Safra tem piso: operações com principal abaixo de ~R$ 2.000 ou troco muito baixo não passam.</div>
   </div>
 
-  <p class="rodape">Estimativa baseada em simulações reais do Safra (Port+Refin, 120 parcelas, 1º vcto ~2 meses).<br>Uso interno — Victor Hugo · Crédito Consignado.</p>
+  <p class="rodape">Estimativa baseada em simulações reais do Safra (Port+Refin; 120 parcelas — PMESP 96; 1º vcto ~2 meses).<br>Uso interno — Victor Hugo · Crédito Consignado.</p>
 </div>
 
 <script>
@@ -71,18 +72,26 @@ function saldoPV(parcela, rest, taxaPct) {
   if (!parcela || !rest || !j || j <= 0 || rest <= 0) return null;
   return parcela * (1 - Math.pow(1 + j, -rest)) / j;
 }
-// Modelo calibrado de portabilidade (Port+Refin × 120). troco = (parcela·F − dívida − iofCompl)/(1+iofTroco)
+// Modelo calibrado: troco = (parcela·F − dívida)/(1 + iofTroco). Não há IOF complementar
+// (complA/complB = 0, medido em 09/07/2026 com 67 simulações reais do EPF).
 const CALIB = {
-  '1.69': { F:49.9124,  iofTroco:0.0319011, complA:25.45, complB:0.00026933 },
-  '1.65': { F:51.0578,  iofTroco:0.0317359, complA:0,     complB:0 },
-  '1.59': { F:52.2039,  iofTroco:0.0319011, complA:25.45, complB:0.00026933 },
-  '1.75': { F:48.6704, iofTroco:0.0319011, complA:25.45, complB:0.00026933 }, // IPREM
+  // chave = taxa x prazo. Prefeitura SP e IPREM: refin de 120 parcelas. PMESP: 96.
+  // NÃO indexar só pela taxa: 1,75% é IPREM 120x (F 48,6443) E PMESP 96x (F 45,1521).
+  // Espelho do CODIGOS/calc.js (CALIB_PORT) — grade fictícia no EPF, 09/07/2026.
+  '1.69x120': { F:49.8571,  iofTroco:0.031926,  complA:0, complB:0 },
+  '1.65x120': { F:50.7124,  iofTroco:0.031967,  complA:0, complB:0 },
+  '1.59x120': { F:52.0390,  iofTroco:0.032028,  complA:0, complB:0 },
+  '1.75x120': { F:48.6443,  iofTroco:0.031847,  complA:0, complB:0 }, // IPREM
+  '1.75x96':  { F:45.1521,  iofTroco:0.031605,  complA:0, complB:0 }, // PMESP
+  '1.69x96':  { F:46.1560,  iofTroco:0.031663,  complA:0, complB:0 }, // PMESP
+  '1.65x96':  { F:46.8443,  iofTroco:0.031701,  complA:0, complB:0 }, // PMESP
 };
-function trocoPort(parcela, saldo, taxa) {
-  const c = CALIB[taxa]; if (!c || saldo == null) return null;
+function trocoPort(parcela, saldo, taxa, prazo) {
+  const c = CALIB[taxa + 'x' + prazo]; if (!c || saldo == null) return null;
   return (parcela * c.F - saldo - (c.complA + c.complB * saldo)) / (1 + c.iofTroco);
 }
-const RATES = { pref: ['1.69'], iprem: ['1.75'] };
+// taxa mostrada por convênio (a primária = melhor comissão) + prazo do refin
+const RATES = { pref: [['1.69',120]], iprem: [['1.75',120]], pmesp: [['1.75',96]] };
 
 function brToNum(s){ return parseFloat(String(s||'').replace(/\s|R\$/g,'').replace(/\./g,'').replace(',','.')); }
 function fmt(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -104,14 +113,14 @@ function calcular(){
   document.getElementById('np').textContent = prazo;
 
   const cards = document.getElementById('cards'); cards.innerHTML='';
-  RATES[conv].forEach((taxaSafra, i) => {
-    const troco = trocoPort(parcela, saldo, taxaSafra);
+  RATES[conv].forEach(([taxaSafra, prazoSafra], i) => {
+    const troco = trocoPort(parcela, saldo, taxaSafra, prazoSafra);
     const principal = troco==null ? null : saldo + troco;
     const best = (i===0);
     const neg = troco!=null && troco<0;
     const piso = principal!=null && principal<2000;
     cards.innerHTML += `<div class="card ${best?'best':''}">
-      <div class="taxa">${taxaSafra.replace('.',',')}% a.m.<small>Safra · 120 parcelas</small></div>
+      <div class="taxa">${taxaSafra.replace('.',',')}% a.m.<small>Safra · ${prazoSafra} parcelas</small></div>
       <div class="troco ${neg?'neg':''}">R$ ${troco==null?'—':fmt(troco)}<small>${piso?'⚠ abaixo do piso Safra':'libera na conta'}</small></div>
     </div>`;
   });
