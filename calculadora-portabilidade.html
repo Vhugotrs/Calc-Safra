@@ -163,6 +163,8 @@
     <div class="fonte" id="out-fonte"></div>
   </div>
 
+  <div class="aviso" id="aviso-taxa" hidden></div>
+
   <div class="troco" id="box-troco">
     <div class="rot">Libera na conta</div>
     <div class="val" id="out-troco"></div>
@@ -176,7 +178,9 @@
 </div>
 
 <p class="rodape">
-  Estimativa baseada em simulações reais do Safra (Port + Refin; 120 parcelas — PMESP 96; 1º vencimento em ~2 meses).<br>
+  Estimativa baseada em simulações reais do Safra (Port + Refin; 120 parcelas — PMESP 96).<br>
+  <!-- carimbo de frescor: o recalibrar_f.js --aplicar reescreve as datas abaixo (regex) — manter o formato -->
+  Calibrado em 09/07/2026 · 1º vencimento da esteira: 09/09/2026 (Pref SP) · 08/09/2026 (IPREM) · 08/09/2026 (PMESP).<br>
   Uso interno — Victor Hugo · Crédito Consignado.
 </p>
 
@@ -248,7 +252,7 @@ function calcular(e) {
   const parcela = brToNum($('parcela').value);
   if (!parcela || parcela <= 0) return falhar('Informe o valor da parcela atual.', $('parcela'));
 
-  let saldo, fonte;
+  let saldo, fonte, avisoTaxa = '';
   if (modo() === 'sei') {
     saldo = brToNum($('saldo').value);
     if (!saldo || saldo <= 0) return falhar('Informe o saldo devedor, ou escolha "Calcular pra mim".', $('saldo'));
@@ -261,6 +265,13 @@ function calcular(e) {
     if (taxa > 10) return falhar('Essa taxa parece ser a ANUAL. Informe a taxa ao MÊS (ex.: 2,49).', $('taxa'));
     if (!prazo || prazo <= 0) return falhar('Informe o prazo em aberto (parcelas restantes).', $('prazo'));
     if (prazo > max) return falhar(`Neste convênio o prazo vai até ${max} parcelas. Confira o valor.`, $('prazo'));
+    // faixa plausível de consignado: 0,9–3,5% a.m. Fora dela quase sempre é a taxa
+    // ANUAL (18,02 → alguém digita 1,802) ou o CET — o saldoPV sai MUITO errado.
+    // Aviso, não bloqueio: existe contrato legítimo fora da faixa.
+    if (taxa < 0.9 || taxa > 3.5) {
+      avisoTaxa = `Taxa de ${fmt(taxa)}% ao mês está fora da faixa comum do consignado (0,9 a 3,5). ` +
+        `Confira no extrato se não é a taxa ANUAL ou o CET — com a taxa errada, o saldo e o troco saem muito errados.`;
+    }
     saldo = saldoPV(parcela, prazo, taxa);
     if (saldo == null) return falhar('Não consegui calcular o saldo — confira os valores.', $('taxa'));
     fonte = `estimado por ${prazo} parcelas de R$ ${fmt(parcela)} a ${fmt(taxa)}% ao mês`;
@@ -272,6 +283,8 @@ function calcular(e) {
 
   $('out-saldo').textContent = 'R$ ' + fmt(saldo);
   $('out-fonte').textContent = fonte;
+  $('aviso-taxa').innerHTML = avisoTaxa ? '<b>Confira a taxa.</b> ' + avisoTaxa : '';
+  $('aviso-taxa').hidden = !avisoTaxa;
   $('out-troco').textContent = 'R$ ' + fmt(troco);
   $('out-troco').className = 'val' + (troco < 0 ? ' neg' : '');
   $('out-det').textContent = `${taxaSafra.replace('.',',')}% ao mês · ${prazoRefin} parcelas de R$ ${fmt(parcela)}`;
