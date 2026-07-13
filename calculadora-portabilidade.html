@@ -197,23 +197,30 @@ function saldoPV(parcela, rest, taxaPct) {
 // Modelo calibrado: troco = (parcela·F − dívida)/(1 + iofTroco). Não há IOF complementar
 // (complA/complB = 0, medido em 09/07/2026 com 67 simulações reais do EPF).
 const CALIB = {
-  // chave = taxa x prazo. Prefeitura SP e IPREM: refin de 120 parcelas. PMESP: 96.
-  // NÃO indexar só pela taxa: 1,75% é IPREM 120x (F 48,6443) E PMESP 96x (F 45,1521).
+  // chave = CONVÊNIO:taxa x prazo (13/07/2026). O convênio entrou na chave porque 1,75%×120
+  // existe no Pref SP (tabela 339592) E no IPREM (296091) — esteiras diferentes, F diferentes.
   // Espelho do CODIGOS/calc.js (CALIB_PORT) — grade fictícia no EPF, 09/07/2026.
-  '1.69x120': { F:49.8571,  iofTroco:0.031926,  complA:0, complB:0 },
-  '1.65x120': { F:50.7124,  iofTroco:0.031967,  complA:0, complB:0 },
-  '1.59x120': { F:52.0390,  iofTroco:0.032028,  complA:0, complB:0 },
-  '1.75x120': { F:48.6443,  iofTroco:0.031847,  complA:0, complB:0 }, // IPREM
-  '1.75x96':  { F:45.2566,  iofTroco:0.031528,  complA:0, complB:0 }, // PMESP
-  '1.69x96':  { F:46.2593,  iofTroco:0.031587,  complA:0, complB:0 }, // PMESP
-  '1.65x96':  { F:46.9466,  iofTroco:0.031626,  complA:0, complB:0 }, // PMESP
+  // PREFEITURA SP — grade NOVA (10/07/2026). A 1,69 saiu de cena: virou 0,50% de repasse.
+  'pref:1.79x120':  { F:47.9289,  iofTroco:0.031751,  complA:0, complB:0 },
+  'pref:1.75x120':  { F:48.7287,  iofTroco:0.031794,  complA:0, complB:0 },
+  // extintas — ficam só pra reprecificar proposta antiga; a calculadora não as oferece
+  'pref:1.69x120':  { F:49.8571,  iofTroco:0.031926,  complA:0, complB:0 },
+  'pref:1.65x120':  { F:50.7124,  iofTroco:0.031967,  complA:0, complB:0 },
+  'pref:1.59x120':  { F:52.0390,  iofTroco:0.032028,  complA:0, complB:0 },
+  // IPREM — esteira própria (1º vcto 08/09). NÃO é a mesma tabela que a 1,75 do Pref SP.
+  'iprem:1.75x120': { F:48.6443,  iofTroco:0.031847,  complA:0, complB:0 },
+  // PMESP — refin de 96 parcelas
+  'pmesp:1.75x96':  { F:45.2566,  iofTroco:0.031528,  complA:0, complB:0 },
+  'pmesp:1.69x96':  { F:46.2593,  iofTroco:0.031587,  complA:0, complB:0 },
+  'pmesp:1.65x96':  { F:46.9466,  iofTroco:0.031626,  complA:0, complB:0 }
 };
-function trocoPort(parcela, saldo, taxa, prazo) {
-  const c = CALIB[taxa + 'x' + prazo]; if (!c || saldo == null) return null;
+function trocoPort(parcela, saldo, taxa, prazo, conv) {
+  const c = CALIB[conv + ':' + taxa + 'x' + prazo]; if (!c || saldo == null) return null;
   return (parcela * c.F - saldo - (c.complA + c.complB * saldo)) / (1 + c.iofTroco);
 }
 // taxa mostrada por convênio (a primária = melhor comissão) + prazo do refin
-const RATES = { pref: [['1.69',120]], iprem: [['1.75',120]], pmesp: [['1.75',96]] };
+// Pref SP: 1,79% desde a grade nova de 10/07/2026 (a 1,69 caiu pra 0,50% de repasse).
+const RATES = { pref: [['1.79',120]], iprem: [['1.75',120]], pmesp: [['1.75',96]] };
 // prazo MÁXIMO do contrato de origem, por convênio (Victor 09/07/2026)
 const PRAZO_MAX = { pref:120, iprem:120, pmesp:96 };
 const PRINCIPAL_MIN = 2000;
@@ -277,7 +284,7 @@ function calcular(e) {
     fonte = `estimado por ${prazo} parcelas de R$ ${fmt(parcela)} a ${fmt(taxa)}% ao mês`;
   }
 
-  const troco = trocoPort(parcela, saldo, taxaSafra, prazoRefin);
+  const troco = trocoPort(parcela, saldo, taxaSafra, prazoRefin, conv);
   if (troco == null) return falhar('Não consegui calcular. Confira os valores.');
   const principal = saldo + troco;
 
