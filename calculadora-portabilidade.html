@@ -180,7 +180,7 @@
 <p class="rodape">
   Estimativa baseada em simulações reais do Safra (Port + Refin; 120 parcelas — PMESP 96).<br>
   <!-- carimbo de frescor: o recalibrar_f.js --aplicar reescreve as datas abaixo (regex) — manter o formato -->
-  Calibrado em 09/07/2026 · 1º vencimento da esteira: 09/09/2026 (Pref SP) · 08/09/2026 (IPREM) · 08/09/2026 (PMESP).<br>
+  Calibrado em 13/07/2026 · 1º vencimento da esteira: 09/09/2026 (Pref SP) · 08/09/2026 (IPREM) · 08/09/2026 (PMESP).<br>
   Uso interno — Victor Hugo · Crédito Consignado.
 </p>
 
@@ -204,9 +204,9 @@ const CALIB = {
   '1.65x120': { F:50.7124,  iofTroco:0.031967,  complA:0, complB:0 },
   '1.59x120': { F:52.0390,  iofTroco:0.032028,  complA:0, complB:0 },
   '1.75x120': { F:48.6443,  iofTroco:0.031847,  complA:0, complB:0 }, // IPREM
-  '1.75x96':  { F:45.1521,  iofTroco:0.031605,  complA:0, complB:0 }, // PMESP
-  '1.69x96':  { F:46.1560,  iofTroco:0.031663,  complA:0, complB:0 }, // PMESP
-  '1.65x96':  { F:46.8443,  iofTroco:0.031701,  complA:0, complB:0 }, // PMESP
+  '1.75x96':  { F:45.2566,  iofTroco:0.031528,  complA:0, complB:0 }, // PMESP
+  '1.69x96':  { F:46.2593,  iofTroco:0.031587,  complA:0, complB:0 }, // PMESP
+  '1.65x96':  { F:46.9466,  iofTroco:0.031626,  complA:0, complB:0 }, // PMESP
 };
 function trocoPort(parcela, saldo, taxa, prazo) {
   const c = CALIB[taxa + 'x' + prazo]; if (!c || saldo == null) return null;
