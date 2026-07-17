@@ -180,7 +180,7 @@
 <p class="rodape">
   Estimativa baseada em simulações reais do Safra (Port + Refin; 120 parcelas — PMESP 96).<br>
   <!-- carimbo de frescor: o recalibrar_f.js --aplicar reescreve as datas abaixo (regex) — manter o formato -->
-  Calibrado em 13/07/2026 · 1º vencimento da esteira: 09/09/2026 (Pref SP) · 08/09/2026 (IPREM) · 08/09/2026 (PMESP).<br>
+  Calibrado em 17/07/2026 · 1º vencimento da esteira: 09/09/2026 (Pref SP) · 08/09/2026 (IPREM) · 08/09/2026 (PMESP).<br>
   Uso interno — Victor Hugo · Crédito Consignado.
 </p>
 
@@ -201,16 +201,16 @@ const CALIB = {
   // existe no Pref SP (tabela 339592) E no IPREM (296091) — esteiras diferentes, F diferentes.
   // Espelho do CODIGOS/calc.js (CALIB_PORT) — grade fictícia no EPF, 09/07/2026.
   // PREFEITURA SP — grade NOVA (10/07/2026). A 1,69 saiu de cena: virou 0,50% de repasse.
-  'pref:1.79x120':  { F:47.9289,  iofTroco:0.031751,  complA:0, complB:0 },
+  'pref:1.79x120':  { F:48.0431,  iofTroco:0.031751,  complA:0, complB:0 },
   'pref:1.75x120':  { F:48.7287,  iofTroco:0.031794,  complA:0, complB:0 },
   // extintas — ficam só pra reprecificar proposta antiga; a calculadora não as oferece
-  'pref:1.69x120':  { F:49.8571,  iofTroco:0.031926,  complA:0, complB:0 },
-  'pref:1.65x120':  { F:50.7124,  iofTroco:0.031967,  complA:0, complB:0 },
-  'pref:1.59x120':  { F:52.0390,  iofTroco:0.032028,  complA:0, complB:0 },
+  'pref:1.69x120':  { F:50.0677,  iofTroco:0.031926,  complA:0, complB:0 },
+  'pref:1.65x120':  { F:50.7185,  iofTroco:0.031967,  complA:0, complB:0 },
+  'pref:1.59x120':  { F:52.1488,  iofTroco:0.032028,  complA:0, complB:0 },
   // IPREM — esteira própria (1º vcto 08/09). NÃO é a mesma tabela que a 1,75 do Pref SP.
-  'iprem:1.75x120': { F:48.7574,  iofTroco:0.031847,  complA:0, complB:0 },
+  'iprem:1.75x120': { F:48.8293,  iofTroco:0.031847,  complA:0, complB:0 },
   // PMESP — refin de 96 parcelas
-  'pmesp:1.75x96':  { F:45.2566,  iofTroco:0.031528,  complA:0, complB:0 },
+  'pmesp:1.75x96':  { F:45.3442,  iofTroco:0.031528,  complA:0, complB:0 },
   'pmesp:1.69x96':  { F:46.2593,  iofTroco:0.031587,  complA:0, complB:0 },
   'pmesp:1.65x96':  { F:46.9466,  iofTroco:0.031626,  complA:0, complB:0 }
 };
